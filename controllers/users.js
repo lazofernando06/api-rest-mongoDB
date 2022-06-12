@@ -2,7 +2,6 @@ const { response, request } = require('express');
 const bcryptjs = require('bcryptjs');
 const User = require('../models/user');
 const { existIdEmail } = require('../helpers/db-validators');
-const { createIndexes } = require('../models/user');
 
 
 const usersGet = async (req = request, res = response) => {
@@ -87,10 +86,11 @@ const usersPut = async (req = request, res = response) => {
 
 }
 
-const usersPatch = async (req, res = response) => {
+const usersPatch = async (req = response, res = response) => {
     const { id } = req.params;
     const idMongo = await existIdEmail(id);
-    const pwd = req.body.password;
+    let pwd = req.body.password;
+    console.log(pwd, 'pass del body');
     if (idMongo == null) {
         return res.json({
             msg: `El id / email ingresado: ${id} no se encuentra en la DB`
@@ -98,8 +98,24 @@ const usersPatch = async (req, res = response) => {
     }
     const newId = idMongo == '' ? id : idMongo;
     const result = await User.findById(newId);
+    console.log(pwd, 'pwd valor');
+    console.log(result.password, 'result.password');
+    const validatePassword = bcryptjs.compareSync(pwd, result.password);
 
-    const query = { password: pwd }
+    console.log(validatePassword, 'comparando');
+
+    if (validatePassword) {
+        return res.json({
+            msg: 'La contraseña ingresada es la misma'
+        });
+    }
+
+    const salt = bcryptjs.genSaltSync();
+    const pwdSave = bcryptjs.hashSync(pwd, salt)
+
+    console.log(newId, 'newId');
+    console.log(pwd, 'pwd');
+    const query = { "password": pwdSave }
     await User.findByIdAndUpdate(newId, query);
 
     res.json({
