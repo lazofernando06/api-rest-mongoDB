@@ -37,7 +37,10 @@ router.post('/', [
 
 router.delete('/:id', usersDelete);
 
-router.patch('/:id', usersPatch);
+router.patch('/:id',[
+    check('password', 'Contraseña no valida').isLength({ min: 6 }),
+    validateField
+], usersPatch);
 
 
 

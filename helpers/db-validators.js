@@ -21,20 +21,19 @@ const existEmailActive = async (email = '') => {
 }
 
 const existIdEmail = async (id = '') => {
-    idMongo = '';
+    let idMongo = null;
     const [err1, err2] = await Promise.all([
-        User.find({ email: id, status: true }),
-        User.findById(isValidObjectId(id))
+        User.findById(isValidObjectId(id)),
+        User.find({ email: id, status: true })
+        //   User.find({ _id: ObjectId(), status: true }),
     ]);
 
-    if (err1.length != 0) {
-        idMongo = err1[0]._id.valueOf() 
+    if (err2[0]) {
+        idMongo = err2[0]._id.valueOf()
     }
 
-    if (!err2) {
-        if (err1.length == 0) {
-            return null
-        }
+    if (err1) {
+        err1.status == true? idMongo = '': idMongo = null
     }
     return idMongo;
 }

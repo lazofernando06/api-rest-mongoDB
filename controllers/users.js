@@ -2,6 +2,7 @@ const { response, request } = require('express');
 const bcryptjs = require('bcryptjs');
 const User = require('../models/user');
 const { existIdEmail } = require('../helpers/db-validators');
+const { createIndexes } = require('../models/user');
 
 
 const usersGet = async (req = request, res = response) => {
@@ -31,7 +32,6 @@ const usersGet_x_id = async (req = request, res = response) => {
     const { id } = req.params;
 
     const idMongo = await existIdEmail(id);
-    console.log(idMongo, 'hola');
     if (idMongo == null) {
         return res.json({
             msg: `El id / email ingresado: ${id} no es valido`
@@ -40,6 +40,7 @@ const usersGet_x_id = async (req = request, res = response) => {
     const newId = idMongo == '' ? id : idMongo;
     const result = await User.findById(newId);
     res.json({
+        idMongo,
         result
     });
 }
@@ -89,7 +90,7 @@ const usersPut = async (req = request, res = response) => {
 const usersPatch = async (req, res = response) => {
     const { id } = req.params;
     const idMongo = await existIdEmail(id);
-
+    const pwd = req.body.password;
     if (idMongo == null) {
         return res.json({
             msg: `El id / email ingresado: ${id} no se encuentra en la DB`
@@ -98,7 +99,7 @@ const usersPatch = async (req, res = response) => {
     const newId = idMongo == '' ? id : idMongo;
     const result = await User.findById(newId);
 
-    const query = { password: req.body.password }
+    const query = { password: pwd }
     await User.findByIdAndUpdate(newId, query);
 
     res.json({
@@ -109,27 +110,20 @@ const usersPatch = async (req, res = response) => {
 
 const usersDelete = async (req, res = response) => {
     const { id } = req.params;
-    const { _id, password, google, email, role, ...rest } = req.body;
-    if (password) {
-        const salt = bcryptjs.genSaltSync();
-        rest.password = bcryptjs.hashSync(password, salt)
-    }
-    if (role != '') {
-        rest.role = role;
-    }
-
     const idMongo = await existIdEmail(id);
-
     if (idMongo == null) {
         return res.json({
-            msg: `El id / email ingresado: ${id} no es valido`
+            msg: `El id / email ingresado: ${id} no se encuentra en la DB`
         });
     }
     const newId = idMongo == '' ? id : idMongo;
-    await User.findByIdAndUpdate(newId, rest);
     const result = await User.findById(newId);
 
+    const query = { status: false }
+    await User.findByIdAndUpdate(newId, query);
+
     res.json({
+        idMongo,
         result
     });
 
