@@ -1,17 +1,16 @@
 const { response } = require("express");
 const bcryptjs = require('bcryptjs');
-const User = require('../models/user')
+const User = require('../models/user');
+const { generateJWT } = require("../helpers/generate-jwt");
 
 
 const authPost = async (req, res = response) => {
 
     const { email, password } = req.body;
-    const query = { 'email':email, status: true };
+    const query = { 'email': email, status: true };
 
     try {
         const user = await User.findOne(query);
-        console.log(user,'user');
-        console.log(password,'password');
         if (!user) {
             return res.status(400).json({
                 msg: ' Email / password no valido - e'
@@ -24,8 +23,11 @@ const authPost = async (req, res = response) => {
                 msg: ' Email / password no valido - p'
             });
         }
+
+        const token = await generateJWT(user.id);
         res.json({
-            msg: 'Logion ok'
+            user,
+            token
         });
     } catch (err) {
         console.log(err);

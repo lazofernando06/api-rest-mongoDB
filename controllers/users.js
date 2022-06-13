@@ -38,6 +38,16 @@ const usersGet_x_id = async (req = request, res = response) => {
     }
     const newId = idMongo == '' ? id : idMongo;
     const result = await User.findById(newId);
+
+    if (req.user.role == 'USER_ROLE') {
+        if (req.user.email != result.email) {
+            return res.json({
+                msg: `No estas habilitado para obtener información de otros usuarios.`
+            });
+        }
+    }
+
+
     res.json({
         idMongo,
         result
@@ -61,12 +71,18 @@ const usersPut = async (req = request, res = response) => {
 
     const { id } = req.params;
     const { _id, password, google, email, role, ...rest } = req.body;
+
+    /*
     if (password) {
         const salt = bcryptjs.genSaltSync();
         rest.password = bcryptjs.hashSync(password, salt)
     }
-    if (role != '') {
-        rest.role = role;
+    */
+
+    if (req.user.role != 'USER_ROLE') {
+        if (role != '') {
+            rest.role = role;
+        }
     }
 
     const idMongo = await existIdEmail(id);
@@ -76,9 +92,20 @@ const usersPut = async (req = request, res = response) => {
             msg: `El id / email ingresado: ${id} no es valido`
         });
     }
+
     const newId = idMongo == '' ? id : idMongo;
+    let result = await User.findById(newId);
+
+    if (req.user.role == 'USER_ROLE') {
+        if (req.user.email != result.email) {
+            return res.json({
+                msg: `No estas habilitado para actualizar datos de otros usuarios.`
+            });
+        }
+    }
+
     await User.findByIdAndUpdate(newId, rest);
-    const result = await User.findById(newId);
+    result = await User.findById(newId);
 
     res.json({
         result
@@ -86,23 +113,31 @@ const usersPut = async (req = request, res = response) => {
 
 }
 
-const usersPatch = async (req = response, res = response) => {
+const usersPatchPassword = async (req = response, res = response) => {
     const { id } = req.params;
     const idMongo = await existIdEmail(id);
     let pwd = req.body.password;
-    console.log(pwd, 'pass del body');
+
+
     if (idMongo == null) {
         return res.json({
             msg: `El id / email ingresado: ${id} no se encuentra en la DB`
         });
     }
+
     const newId = idMongo == '' ? id : idMongo;
     const result = await User.findById(newId);
-    console.log(pwd, 'pwd valor');
-    console.log(result.password, 'result.password');
-    const validatePassword = bcryptjs.compareSync(pwd, result.password);
 
-    console.log(validatePassword, 'comparando');
+    if (req.user.role == 'USER_ROLE') {
+        if (req.user.email != result.email) {
+            return res.json({
+                msg: `No estas habilitado para cambiar otros usuarios.`
+            });
+        }
+    }
+
+
+    const validatePassword = bcryptjs.compareSync(pwd, result.password);
 
     if (validatePassword) {
         return res.json({
@@ -113,8 +148,6 @@ const usersPatch = async (req = response, res = response) => {
     const salt = bcryptjs.genSaltSync();
     const pwdSave = bcryptjs.hashSync(pwd, salt)
 
-    console.log(newId, 'newId');
-    console.log(pwd, 'pwd');
     const query = { "password": pwdSave }
     await User.findByIdAndUpdate(newId, query);
 
@@ -127,6 +160,7 @@ const usersPatch = async (req = response, res = response) => {
 const usersDelete = async (req, res = response) => {
     const { id } = req.params;
     const idMongo = await existIdEmail(id);
+
     if (idMongo == null) {
         return res.json({
             msg: `El id / email ingresado: ${id} no se encuentra en la DB`
@@ -136,10 +170,18 @@ const usersDelete = async (req, res = response) => {
     const result = await User.findById(newId);
 
     const query = { status: false }
+
+    if (req.user.role == 'USER_ROLE') {
+        if (req.user.email != result.email) {
+            return res.json({
+                msg: `No estas habilitado para eliminar otros usuarios.`
+            });
+        }
+    }
+
     await User.findByIdAndUpdate(newId, query);
 
     res.json({
-        idMongo,
         result
     });
 
@@ -150,6 +192,6 @@ module.exports = {
     usersGet_x_id,
     usersPost,
     usersPut,
-    usersPatch,
+    usersPatchPassword,
     usersDelete,
 }
