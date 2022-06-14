@@ -3,7 +3,7 @@ const { Router } = require('express');
 const { check } = require('express-validator');
 
 const { validateField } = require('../middlewares/validate-field');
-const { isRoleValidate } = require('../helpers/db-validators');
+const { isRoleValidate, existEmailActive } = require('../helpers/db-validators');
 const { validateJWT } = require('../middlewares/validate-jwt');
 const { isAdminRole, isRole } = require('../middlewares/valiotae-role');
 
@@ -13,7 +13,6 @@ const { usersGet,
     usersPut,
     usersPost,
     usersDelete,
-    usersPatch, 
     usersPatchPassword} = require('../controllers/users');
 
 const router = Router();
@@ -37,10 +36,11 @@ router.put('/:id', [
 ], usersPut);
 
 router.post('/', [
+    check('email').custom(existEmailActive),
+    check('email', 'El email no es valido').isEmail(),
     check('name', 'El nombre es obligatorio').not().isEmpty(),
     check('lastname', 'Los apellidos son obligatorio').not().isEmpty(),
     check('password', 'Contraseña no valida').isLength({ min: 6 }),
-    check('email', 'El email no es valido').isEmail(),
     check('role').custom(isRoleValidate),
     validateField
 ], usersPost);

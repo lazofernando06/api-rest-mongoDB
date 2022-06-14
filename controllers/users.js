@@ -58,7 +58,7 @@ const usersPost = async (req, res = response) => {
     const user = new User(rest);
 
     const salt = bcryptjs.genSaltSync();
-    user.password = bcryptjs.hashSync(query.password, salt)
+    user.password = bcryptjs.hashSync(rest.password, salt)
 
     await user.save();
 
@@ -72,18 +72,22 @@ const usersPut = async (req = request, res = response) => {
     const { id } = req.params;
     const { _id, password, google, email, role, ...rest } = req.body;
 
-    /*
-    if (password) {
-        const salt = bcryptjs.genSaltSync();
-        rest.password = bcryptjs.hashSync(password, salt)
-    }
-    */
 
     if (req.user.role != 'USER_ROLE') {
         if (role != '') {
             rest.role = role;
         }
+    } else {
+        const validatePassword = bcryptjs.compareSync(password, req.user.password);
+
+        if (!validatePassword) {
+            return res.json({
+                msg: `La contraseña ingresado es incorrecta`
+            });
+        }
     }
+
+
 
     const idMongo = await existIdEmail(id);
 
