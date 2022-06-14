@@ -54,8 +54,8 @@ const usersGet_x_id = async (req = request, res = response) => {
     });
 }
 const usersPost = async (req, res = response) => {
-    const query = req.body;
-    const user = new User(query);
+    const { _id, google, role, ...rest } = req.body;
+    const user = new User(rest);
 
     const salt = bcryptjs.genSaltSync();
     user.password = bcryptjs.hashSync(query.password, salt)

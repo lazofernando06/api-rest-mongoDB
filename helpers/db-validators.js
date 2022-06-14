@@ -16,7 +16,9 @@ const existEmailActive = async (email = '') => {
     // Verificar si el email existe
     const existeEmail = await User.findOne({ email });
     if (existeEmail) {
-        throw new Error(`El email: ${email}, ya está registrado`);
+        if (existeEmail.status == true) {
+            throw new Error(`El email: ${email}, ya está registrado`);
+        }
     }
 }
 
@@ -33,7 +35,7 @@ const existIdEmail = async (id = '') => {
     }
 
     if (err1) {
-        err1.status == true? idMongo = '': idMongo = null
+        err1.status == true ? idMongo = '' : idMongo = null
     }
     return idMongo;
 }
